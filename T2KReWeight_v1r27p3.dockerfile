@@ -58,33 +58,22 @@ RUN ./configure --enable-unuran --enable-roofit --enable-gdml --enable-minuit2 -
 
 WORKDIR /
 
-# ARE SKOFL AND ATMPD REQUIRED FOR NEUT?!
-RUN mkdir -p /opt/SKOFL
-WORKDIR /opt/SKOFL
-# From https://kmcvs.icrr.u-tokyo.ac.jp/svn/rep/skofl/tags/17a/
-ADD skofl_17a.tar.gz /opt/SKOFL/
-
-RUN mkdir -p /opt/ATMPD 
-WORKDIR /opt/ATMPD
-# From https://kmcvs.icrr.u-tokyo.ac.jp/svn/rep/atmpd/tags/ap17a/
-ADD atmpd_17a.tar.gz /opt/ATMPD/
-
-
+# Get NEUT
 RUN mkdir -p /opt/NEUT/
 WORKDIR /opt/NEUT/
-# From https://www.t2k.org/asg/xsec/niwgdocs/neut/NEUT5.4.0
-# NEED NEUT 5.3.3 -- CHANGE !!!!
-#ADD neut_5.4.0.tar.gz /opt/NEUT/
+# From https://www.t2k.org/asg/xsec/niwgdocs/neut/neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz
+ADD neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz /opt/NEUT/
+
+
+
+
 
 # Set up environment
-ENV SKOFL_ROOT /opt/SKOFL/17a/
-ENV ATMPD_ROOT /opt/ATMPD/ap17a/
-ENV ATMPD_SRC /opt/ATMPD/ap17a/
-ENV NEUT_ROOT  /opt/NEUT/neut_5.4.0/
+ENV NEUT_ROOT  /opt/NEUT/
 ENV LD_LIBRARY_PATH ${SKOFL_ROOT}/lib:${ROOTSYS}/lib:$LD_LIBRARY_PATH
 
 # Install NEUT libraries
-WORKDIR /opt/NEUT/neut_5.4.0/src/neutsmpl
+WORKDIR /opt/NEUT/src/neutsmpl
 
 RUN source /opt/ROOT/root/bin/thisroot.sh \
     && cd /opt/CERNLIB/ \             
@@ -96,71 +85,74 @@ RUN source /opt/ROOT/root/bin/thisroot.sh \
     && sed -i 's:#setenv ROOTSYS .*:setenv ROOTSYS '${ROOTSYS}':g' EnvMakeneutsmpl.csh  \
     && ./Makeneutsmpl.csh
 
-ENV F77 gfortran
 
-# Install SKOFL+ATMPD 17a
 
-# First time fails
-WORKDIR /opt/SKOFL/17a/
-
-RUN source /opt/ROOT/root/bin/thisroot.sh \
-    && cd /opt/CERNLIB/ \             
-    && source /opt/CERNLIB/cernlib_env \
-    && cd - \
-    && ./compile.sh; exit 0
-
-# This install script seems to be broken... Add some stuff...
-RUN sed -i '22 a   make all' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-    &&  sed -i '22 a   make includes' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-    &&  sed -i '22 a   make clean' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-    &&  sed -i '22 a   make Makefile' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \ 
-    &&  sed -i '22 a   imake_boot' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-    &&  sed -i '/make library/d' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-    &&  sed -i 's/make install.library/make install.lib/' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-    &&  sed -i 's/5.3.5/5.4.0/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
-    &&  sed -i 's/5.3.6/5.4.0/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
-    &&  sed -i 's/535/540/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
-    &&  sed -i 's/536/540/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile
-
-RUN source /opt/ROOT/root/bin/thisroot.sh \
-    && cd /opt/CERNLIB/ \             
-    && source /opt/CERNLIB/cernlib_env \
-    && cd - \
-    && cd $NEUT_ROOT/src/t2kflux_zbs \
-    && ./Maket2kneut.csh;
-
-# More hacking...
-RUN ln -s /opt/NEUT/neut_5.4.0/lib/Linux_pc/libzbsfns_5.4.0.a /opt/NEUT/neut_5.4.0/lib/libzbsfns_5.4.0.a
-
-RUN ls /opt/NEUT/neut_5.4.0/lib/
-RUN ls /opt/NEUT/neut_5.4.0/lib/Linux_pc
-
-# Now succeeds
-RUN source /opt/ROOT/root/bin/thisroot.sh \
-    && cd /opt/CERNLIB/ \             
-    && source /opt/CERNLIB/cernlib_env \
-    && cd - \
-    && ./compile.sh
-
-# Remove build tools
-RUN yum -y remove wget 
-RUN yum -y remove gcc 
-RUN yum -y remove gcc-c++ 
-RUN yum -y remove gcc-gfortran 
-RUN yum -y remove make 
-RUN yum -y remove imake 
-RUN yum -y remove tcsh 
-RUN yum -y remove ed 
-RUN yum -y remove file
-RUN yum -y remove svn
-RUN yum -y remove byacc
-RUN yum -y remove byaccj
-RUN yum -y remove flex
-RUN yum -y remove unzip
-
-# Restore CentOS default aliases
-RUN alias cp="cp -i" mv="mv -i" rm="rm -i" 
-RUN sed -i 's:#alias:alias:g' ~/.bashrc \
-    && sed -i 's:#alias:alias:g' ~/.tcshrc \
-    && sed -i 's:#alias:alias:g' ~/.cshrc
-
+####
+####ENV F77 gfortran
+####
+##### Install SKOFL+ATMPD 17a
+####
+##### First time fails
+####WORKDIR /opt/SKOFL/17a/
+####
+####RUN source /opt/ROOT/root/bin/thisroot.sh \
+####    && cd /opt/CERNLIB/ \             
+####    && source /opt/CERNLIB/cernlib_env \
+####    && cd - \
+####    && ./compile.sh; exit 0
+####
+##### This install script seems to be broken... Add some stuff...
+####RUN sed -i '22 a   make all' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
+####    &&  sed -i '22 a   make includes' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
+####    &&  sed -i '22 a   make clean' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
+####    &&  sed -i '22 a   make Makefile' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \ 
+####    &&  sed -i '22 a   imake_boot' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
+####    &&  sed -i '/make library/d' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
+####    &&  sed -i 's/make install.library/make install.lib/' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
+####    &&  sed -i 's/5.3.5/5.4.0/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
+####    &&  sed -i 's/5.3.6/5.4.0/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
+####    &&  sed -i 's/535/540/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
+####    &&  sed -i 's/536/540/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile
+####
+####RUN source /opt/ROOT/root/bin/thisroot.sh \
+####    && cd /opt/CERNLIB/ \             
+####    && source /opt/CERNLIB/cernlib_env \
+####    && cd - \
+####    && cd $NEUT_ROOT/src/t2kflux_zbs \
+####    && ./Maket2kneut.csh;
+####
+##### More hacking...
+####RUN ln -s /opt/NEUT/neut_5.4.0/lib/Linux_pc/libzbsfns_5.4.0.a /opt/NEUT/neut_5.4.0/lib/libzbsfns_5.4.0.a
+####
+####RUN ls /opt/NEUT/neut_5.4.0/lib/
+####RUN ls /opt/NEUT/neut_5.4.0/lib/Linux_pc
+####
+##### Now succeeds
+####RUN source /opt/ROOT/root/bin/thisroot.sh \
+####    && cd /opt/CERNLIB/ \             
+####    && source /opt/CERNLIB/cernlib_env \
+####    && cd - \
+####    && ./compile.sh
+####
+##### Remove build tools
+####RUN yum -y remove wget 
+####RUN yum -y remove gcc 
+####RUN yum -y remove gcc-c++ 
+####RUN yum -y remove gcc-gfortran 
+####RUN yum -y remove make 
+####RUN yum -y remove imake 
+####RUN yum -y remove tcsh 
+####RUN yum -y remove ed 
+####RUN yum -y remove file
+####RUN yum -y remove svn
+####RUN yum -y remove byacc
+####RUN yum -y remove byaccj
+####RUN yum -y remove flex
+####RUN yum -y remove unzip
+####
+##### Restore CentOS default aliases
+####RUN alias cp="cp -i" mv="mv -i" rm="rm -i" 
+####RUN sed -i 's:#alias:alias:g' ~/.bashrc \
+####    && sed -i 's:#alias:alias:g' ~/.tcshrc \
+####    && sed -i 's:#alias:alias:g' ~/.cshrc
+####
