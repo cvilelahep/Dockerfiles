@@ -64,10 +64,6 @@ WORKDIR /opt/NEUT/
 # From https://www.t2k.org/asg/xsec/niwgdocs/neut/neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz
 ADD neut_5.3.3_maqefix_t2krw_v1r27p3.tar.gz /opt/NEUT/
 
-
-
-
-
 # Set up environment
 ENV NEUT_ROOT  /opt/NEUT/
 ENV LD_LIBRARY_PATH ${SKOFL_ROOT}/lib:${ROOTSYS}/lib:$LD_LIBRARY_PATH
@@ -84,6 +80,19 @@ RUN source /opt/ROOT/root/bin/thisroot.sh \
     && sed -i 's:#setenv CERN_LEVEL .*:setenv CERN_LEVEL '${CERN_LEVEL}':g' EnvMakeneutsmpl.csh  \
     && sed -i 's:#setenv ROOTSYS .*:setenv ROOTSYS '${ROOTSYS}':g' EnvMakeneutsmpl.csh  \
     && ./Makeneutsmpl.csh
+
+RUN mkdir -p /opt/GEANTReWeight/
+ADD GEANTReWeight_v1r1.tar.gz /opt/GEANTReWeight/
+
+RUN mkdir -p /opt/NIWGReWeight/
+ADD NIWGReWeight_v1r23p2.tar.gz /opt/NIWGReWeight/
+
+RUN mkdir -p /opt/JReWeight/
+ADD JReWeight_v1r13.tar.gz /opt/JReWeight/
+
+RUN mkdir -p /opt/T2KReWeight/
+ADD T2KReWeight_v1r27p3.tar.gz /opt/T2KReWeight/
+
 
 
 
