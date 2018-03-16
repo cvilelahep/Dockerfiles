@@ -148,83 +148,13 @@ RUN echo '#!/bin/bash' > /opt/setup.sh \
     && echo 'export LD_LIBRARY_PATH=${GEANTRW}:$LD_LIBRARY_PATH'>> /opt/setup.sh \
     && echo 'export GEANTREWEIGHT_INPUTS=${GEANTRW}/inputs'>> /opt/setup.sh
 
+
+# Get rid of psyche-ish apps (for now)
+
+Run sed -i 's/all: genWeightsFromNRooTracker_BANFF_2016 genWeightsSKsplines_NIWG.exe genWeightsSKsplines_NIWG_BeRPA.exe genWeightsFromNRooTracker_ND280_NIWG_Validation/all: /g' /opt/T2KReWeight/T2KReWeight/app/Makefile
 WORKDIR /opt/T2KReWeight/T2KReWeight
 
-RUN ls /opt/libReadoaAnalysis/libReadoaAnalysis/
-
-RUN ls /opt/T2KReWeight/T2KReWeight/
-
 # Configure and build T2KReWeight
-#RUN source /opt/setup.sh \
-#    && ./configure --enable-neut --enable-jnubeam --enable-oaanalysis --enable-niwg --enable-geant --disable-psyche --with-oaanalysis-lib=/opt/libReadoaAnalysis/libReadoaAnalysis/ --with-cern=${CERN_ROOT} \
-#    && make
-
-####
-####ENV F77 gfortran
-####
-##### Install SKOFL+ATMPD 17a
-####
-##### First time fails
-####WORKDIR /opt/SKOFL/17a/
-####
-####RUN source /opt/ROOT/root/bin/thisroot.sh \
-####    && cd /opt/CERNLIB/ \             
-####    && source /opt/CERNLIB/cernlib_env \
-####    && cd - \
-####    && ./compile.sh; exit 0
-####
-##### This install script seems to be broken... Add some stuff...
-####RUN sed -i '22 a   make all' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-####    &&  sed -i '22 a   make includes' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-####    &&  sed -i '22 a   make clean' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-####    &&  sed -i '22 a   make Makefile' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \ 
-####    &&  sed -i '22 a   imake_boot' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-####    &&  sed -i '/make library/d' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-####    &&  sed -i 's/make install.library/make install.lib/' /opt/NEUT/neut_5.4.0/src/t2kflux_zbs/Maket2kneut.csh \
-####    &&  sed -i 's/5.3.5/5.4.0/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
-####    &&  sed -i 's/5.3.6/5.4.0/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
-####    &&  sed -i 's/535/540/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile \
-####    &&  sed -i 's/536/540/' /opt/NEUT/neut_5.4.0/src/zbsfns/Imakefile
-####
-####RUN source /opt/ROOT/root/bin/thisroot.sh \
-####    && cd /opt/CERNLIB/ \             
-####    && source /opt/CERNLIB/cernlib_env \
-####    && cd - \
-####    && cd $NEUT_ROOT/src/t2kflux_zbs \
-####    && ./Maket2kneut.csh;
-####
-##### More hacking...
-####RUN ln -s /opt/NEUT/neut_5.4.0/lib/Linux_pc/libzbsfns_5.4.0.a /opt/NEUT/neut_5.4.0/lib/libzbsfns_5.4.0.a
-####
-####RUN ls /opt/NEUT/neut_5.4.0/lib/
-####RUN ls /opt/NEUT/neut_5.4.0/lib/Linux_pc
-####
-##### Now succeeds
-####RUN source /opt/ROOT/root/bin/thisroot.sh \
-####    && cd /opt/CERNLIB/ \             
-####    && source /opt/CERNLIB/cernlib_env \
-####    && cd - \
-####    && ./compile.sh
-####
-##### Remove build tools
-####RUN yum -y remove wget 
-####RUN yum -y remove gcc 
-####RUN yum -y remove gcc-c++ 
-####RUN yum -y remove gcc-gfortran 
-####RUN yum -y remove make 
-####RUN yum -y remove imake 
-####RUN yum -y remove tcsh 
-####RUN yum -y remove ed 
-####RUN yum -y remove file
-####RUN yum -y remove svn
-####RUN yum -y remove byacc
-####RUN yum -y remove byaccj
-####RUN yum -y remove flex
-####RUN yum -y remove unzip
-####
-##### Restore CentOS default aliases
-####RUN alias cp="cp -i" mv="mv -i" rm="rm -i" 
-####RUN sed -i 's:#alias:alias:g' ~/.bashrc \
-####    && sed -i 's:#alias:alias:g' ~/.tcshrc \
-####    && sed -i 's:#alias:alias:g' ~/.cshrc
-####
+RUN source /opt/setup.sh \
+    && ./configure --enable-neut --enable-jnubeam --enable-oaanalysis --enable-niwg --enable-geant --disable-psyche --with-oaanalysis-lib=/opt/libReadoaAnalysis/libReadoaAnalysis/ --with-cern=${CERN_ROOT} \
+    && make
