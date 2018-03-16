@@ -93,6 +93,55 @@ ADD JReWeight_v1r13.tar.gz /opt/JReWeight/
 RUN mkdir -p /opt/T2KReWeight/
 ADD T2KReWeight_v1r27p3.tar.gz /opt/T2KReWeight/
 
+RUN mkdir /opt/libReadoaAnalysis
+WORKDIR /opt/libReadoaAnalysis
+
+COPY oa_nt_beam_90410000-0000_sot7hsri7hfb_anal_001_prod6amagnet201011waterc-bsdv01_2.root /opt/
+
+RUN echo 'void tempScript(){' > tempScript.C \
+    && echo 'TFile * f = new TFile("/opt/oa_nt_beam_90410000-0000_sot7hsri7hfb_anal_001_prod6amagnet201011waterc-bsdv01_2.root");' >> tempScript.C \
+    && echo 'f->MakeProject("libReadoaAnalysis","*","recreate++");' >> tempScript.C \
+    && echo '}' >> tempScript.C \       
+    && cat tempScript.C \
+    && source /opt/ROOT/root/bin/thisroot.sh \
+    && root -b -q tempScript.C \
+    && rm tempScript.C
+
+WORKDIR /opt/T2KReWeight/
+
+
+
+RUN ls T2KReWeight/example_scripts
+RUN cat T2KReWeight/example_scripts/example_config.sh
+RUN cat T2KReWeight/example_scripts/example_setup.sh
+RUN T2KReWeight/configure --help
+
+
+##
+## Example config script. Default is all engines disabled. Before 
+## enabling engines, make sure environment is set correctly in 
+## example_setup.sh
+##
+##!/bin/bash
+#
+#source example_setup.sh;
+#
+#./configure \
+#    --disable-neut \
+#        --with-cern=$CERN_ROOT \
+#    --disable-jnubeam \
+#	--disable-oaanalysis \
+#		--with-oaanalysis-lib=$OAANALYSISLIBS \
+#	--disable-genie \
+#		--with-pythia6-lib=$PYTHIA6_LIB \
+#		--with-lhapdf-inc=$LHAPDF_INC \
+# 		--with-lhapdf-lib=$LHAPDF_LIB \
+#		--with-libxml2-inc=$LIBXML_INC \
+#		--with-libxml2-lib=$LIBXML_LIB \
+#		--with-log4cpp-inc=$LOG4CPP_INC \
+#		--with-log4cpp-lib=$LOG4CPP_LIB \
+#    --disable-niwg \
+#    --disable-geant;
 
 
 
