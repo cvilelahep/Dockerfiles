@@ -158,3 +158,25 @@ WORKDIR /opt/T2KReWeight/T2KReWeight
 RUN source /opt/setup.sh \
     && ./configure --enable-neut --enable-jnubeam --enable-oaanalysis --enable-niwg --enable-geant --disable-psyche --with-oaanalysis-lib=/opt/libReadoaAnalysis/libReadoaAnalysis/ --with-cern=${CERN_ROOT} \
     && make
+
+# Remove build tools
+RUN yum -y remove wget 
+RUN yum -y remove gcc 
+RUN yum -y remove gcc-c++ 
+RUN yum -y remove gcc-gfortran 
+RUN yum -y remove make 
+RUN yum -y remove imake 
+RUN yum -y remove tcsh 
+RUN yum -y remove ed 
+RUN yum -y remove file
+RUN yum -y remove svn
+RUN yum -y remove byacc
+RUN yum -y remove byaccj
+RUN yum -y remove flex
+RUN yum -y remove unzip
+
+# Restore CentOS default aliases
+RUN alias cp="cp -i" mv="mv -i" rm="rm -i" 
+RUN sed -i 's:#alias:alias:g' ~/.bashrc \
+    && sed -i 's:#alias:alias:g' ~/.tcshrc \
+&& sed -i 's:#alias:alias:g' ~/.cshrc
