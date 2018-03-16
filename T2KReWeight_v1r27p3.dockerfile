@@ -98,6 +98,7 @@ WORKDIR /opt/libReadoaAnalysis
 
 COPY oa_nt_beam_90410000-0000_sot7hsri7hfb_anal_001_prod6amagnet201011waterc-bsdv01_2.root /opt/
 
+# Build libReadoaAnalysis
 RUN echo 'void tempScript(){' > tempScript.C \
     && echo 'TFile * f = new TFile("/opt/oa_nt_beam_90410000-0000_sot7hsri7hfb_anal_001_prod6amagnet201011waterc-bsdv01_2.root");' >> tempScript.C \
     && echo 'f->MakeProject("libReadoaAnalysis","*","recreate++");' >> tempScript.C \
@@ -107,43 +108,56 @@ RUN echo 'void tempScript(){' > tempScript.C \
     && root -b -q tempScript.C \
     && rm tempScript.C
 
-WORKDIR /opt/T2KReWeight/
 
+# Build GEANTReWeight
+WORKDIR /opt/GEANTReWeight/GEANTReWeight/
+RUN source /opt/ROOT/root/bin/thisroot.sh \
+    && make all
 
+# Build NIWGReWeight
+WORKDIR /opt/NIWGReWeight/NIWGReWeight
+RUN source /opt/ROOT/root/bin/thisroot.sh \
+    && make all
 
-RUN ls T2KReWeight/example_scripts
-RUN cat T2KReWeight/example_scripts/example_config.sh
-RUN cat T2KReWeight/example_scripts/example_setup.sh
-RUN T2KReWeight/configure --help
+# Build JReWeight
+WORKDIR /opt/JReWeight/JReWeight
+RUN source /opt/ROOT/root/bin/thisroot.sh \
+    && make all
 
+# Write setup script
+RUN echo '#!/bin/bash' > /opt/setup.sh \
+    && echo 'source /opt/ROOT/root/bin/thisroot.sh' >> /opt/setup.sh \
+    && echo 'export T2KREWEIGHT=/opt/T2KReWeight/T2KReWeight/ '  >> /opt/setup.sh \
+    && echo 'export PATH=$T2KREWEIGHT/bin:$PATH:$T2KREWEIGHT/app:$ROOTSYS/bin:$PATH' >> /opt/setup.sh \
+    && echo 'export LD_LIBRARY_PATH=$T2KREWEIGHT/lib:$LD_LIBRARY_PATH'  >> /opt/setup.sh \
+    && echo 'export OAANALYSISLIBS=/opt/libReadoaAnalysis/libReadoaAnalysis'  >> /opt/setup.sh \
+    && echo 'export LD_LIBRARY_PATH=$OAANALYSISLIBS:$LD_LIBRARY_PATH' >> /opt/setup.sh \
+    && echo 'cd /opt/CERNLIB/'   >> /opt/setup.sh \
+    && echo 'source /opt/CERNLIB/cernlib_env'  >> /opt/setup.sh \
+    && echo 'cd -'   >> /opt/setup.sh \
+    && echo 'export NEUT_ROOT=/opt/NEUT/'  >> /opt/setup.sh \
+    && echo 'export PATH=$NEUT_ROOT/src/neutsmpl/bin:$PATH' >> /opt/setup.sh \
+    && echo 'export LD_LIBRARY_PATH=$NEUT_ROOT/src/reweight:$LD_LIBRARY_PATH' >> /opt/setup.sh \
+    && echo 'export JNUBEAM=/opt/JReWeight/JReWeight'  >> /opt/setup.sh \
+    && echo 'export LD_LIBRARY_PATH=${JNUBEAM}:$LD_LIBRARY_PATH' >> /opt/setup.sh \
+    && echo 'export JREWEIGHT_INPUTS=${JNUBEAM}/inputs' >> /opt/setup.sh \
+    && echo 'export NIWG=/opt/NIWGReWeight/NIWGReWeight' >> /opt/setup.sh \
+    && echo 'export LD_LIBRARY_PATH=${NIWG}:$LD_LIBRARY_PATH' >> /opt/setup.sh \
+    && echo 'export NIWGREWEIGHT_INPUTS=${NIWG}/inputs' >> /opt/setup.sh \
+    && echo 'export GEANTRW=/opt/GEANTReWeight/GEANTReWeight'>> /opt/setup.sh \
+    && echo 'export LD_LIBRARY_PATH=${GEANTRW}:$LD_LIBRARY_PATH'>> /opt/setup.sh \
+    && echo 'export GEANTREWEIGHT_INPUTS=${GEANTRW}/inputs'>> /opt/setup.sh
 
-##
-## Example config script. Default is all engines disabled. Before 
-## enabling engines, make sure environment is set correctly in 
-## example_setup.sh
-##
-##!/bin/bash
-#
-#source example_setup.sh;
-#
-#./configure \
-#    --disable-neut \
-#        --with-cern=$CERN_ROOT \
-#    --disable-jnubeam \
-#	--disable-oaanalysis \
-#		--with-oaanalysis-lib=$OAANALYSISLIBS \
-#	--disable-genie \
-#		--with-pythia6-lib=$PYTHIA6_LIB \
-#		--with-lhapdf-inc=$LHAPDF_INC \
-# 		--with-lhapdf-lib=$LHAPDF_LIB \
-#		--with-libxml2-inc=$LIBXML_INC \
-#		--with-libxml2-lib=$LIBXML_LIB \
-#		--with-log4cpp-inc=$LOG4CPP_INC \
-#		--with-log4cpp-lib=$LOG4CPP_LIB \
-#    --disable-niwg \
-#    --disable-geant;
+WORKDIR /opt/T2KReWeight/T2KReWeight
 
+RUN ls /opt/libReadoaAnalysis/libReadoaAnalysis/
 
+RUN ls /opt/T2KReWeight/T2KReWeight/
+
+# Configure and build T2KReWeight
+#RUN source /opt/setup.sh \
+#    && ./configure --enable-neut --enable-jnubeam --enable-oaanalysis --enable-niwg --enable-geant --disable-psyche --with-oaanalysis-lib=/opt/libReadoaAnalysis/libReadoaAnalysis/ --with-cern=${CERN_ROOT} \
+#    && make
 
 ####
 ####ENV F77 gfortran
